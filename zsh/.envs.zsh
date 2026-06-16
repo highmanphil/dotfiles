@@ -5,11 +5,11 @@ export HOMEBREW_NO_ENV_HINTS="1"
 export BUN_INSTALL="$HOME/.bun"
 
 export LC_CTYPE="en_US.UTF-8"
-export JAVA_HOME="/opt/homebrew/opt/openjdk@21"
-export ZSH="/Users/$USER/.oh-my-zsh"
+# export JAVA_HOME="/opt/homebrew/opt/openjdk@21"
+export ZSH="$HOME/.oh-my-zsh"
 
 export NVM_DIR="$HOME/.nvm"
-export PATH="/Users/phil/.local/bin:/opt/homebrew/opt/dotnet@8/bin:/opt/homebrew/opt/openjdk@21/bin:/Users/$USER/.codeium/windsurf/bin:$BUN_INSTALL/bin:/Users/$USER/.bin:/opt/homebrew/opt/node@12/bin:/Users/$USER/go/bin:$PATH"
+export PATH="/Users/phil/.local/bin:/opt/homebrew/opt/dotnet@8/bin:/opt/homebrew/opt/openjdk@21/bin:/Users/$USER/.codeium/windsurf/bin:$BUN_INSTALL/bin:/Users/$USER/.bin:/opt/homebrew/opt/node@12/bin:/Users/$USER/go/bin:/home/phil/bin:$PATH"
 
 auto_source_dot_envs() {
   local envs_dir=".envs" # Define the directory name we're looking for
@@ -40,3 +40,9 @@ if [[ -z "${chpwd_functions[(r)auto_source_dot_envs]}" ]]; then
 fi
 
 auto_source_dot_envs
+
+export VOXINPUT_BASE_URL="http://127.0.0.1:8080/v1"
+export VOXINPUT_TRANSCRIPTION_MODEL="whisper-large-v3"
+# export VOXINPUT_LANG="de"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
