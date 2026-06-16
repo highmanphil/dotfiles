@@ -11,7 +11,7 @@ if not vim.uv.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-require("lazy").setup({ { import = "sqlexception.plugins" }, { import = "sqlexception.plugins.lsp" }
+require("lazy").setup({ { import = "highmanphil.plugins" }, { import = "highmanphil.plugins.lsp" }
 }, {
   checker = {
     enabled = true,
