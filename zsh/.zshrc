@@ -18,6 +18,7 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+[[ ! -f ~/.p10k-mac-ssh.zsh ]] || source ~/.p10k-mac-ssh.zsh
 
 [ -f "$HOME/.zsh_home" ] && source "$HOME/.zsh_home"
 [ -f "$HOME/.zsh_work" ] && source "$HOME/.zsh_work"
