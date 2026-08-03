@@ -2,6 +2,9 @@
 # The Mac sends P10K_MAC_SSH through SSH. cmux's managed remote workspace id is
 # a fallback for hosts where AcceptEnv cannot be enabled without sudo.
 _p10k_mac_ssh_origin="${P10K_MAC_SSH:-}"
+if [[ -z "$_p10k_mac_ssh_origin" && "${SSH_CONNECTION%% *}" == "100.123.207.72" ]]; then
+  _p10k_mac_ssh_origin=home
+fi
 if [[ -z "$_p10k_mac_ssh_origin" && -n "${SSH_CONNECTION:-}" && -n "${CMUX_WORKSPACE_ID:-}" ]]; then
   _p10k_mac_ssh_origin=home
 fi
