@@ -1,0 +1,6 @@
+[global]
+# Powerlevel10k instant prompt treats direnv's routine "loading .envrc"
+# status line as unexpected shell-init output. Disable normal status logging;
+# errors from commands executed by .envrc still go to stderr. Match no normal
+# log messages; direnv 2.37 currently misformats `log_format = "-"`.
+log_filter = "^$"

@@ -17,3 +17,4 @@ stow zsh
 stow nvim
 stow tmux
 stow ghostty
+stow direnv
