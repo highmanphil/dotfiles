@@ -1,0 +1,69 @@
+#!/bin/zsh
+
+# cmux keeps a pinned workspace after its final tab closes, but currently
+# inserts a local shell even when the workspace belongs to an SSH remote.
+# Watch close events and replace only that final local placeholder with a
+# terminal created through the workspace's still-live remote transport.
+
+setopt pipefail
+
+cmux_cli=/Applications/cmux.app/Contents/Resources/bin/cmux
+jq_cli=/opt/homebrew/bin/jq
+
+if [[ ! -x "$jq_cli" ]]; then
+  jq_cli="${commands[jq]:-}"
+fi
+
+if [[ ! -x "$cmux_cli" || -z "$jq_cli" || ! -x "$jq_cli" ]]; then
+  print -u2 -- "cmux workspace keeper: cmux or jq is unavailable"
+  exit 1
+fi
+
+export CMUX_QUIET=1
+
+handle_surface_close() {
+  local event_json="$1"
+  local workspace_id destination workspace_json sessions placeholder
+
+  [[ "$(print -r -- "$event_json" | "$jq_cli" -r '.type // empty')" == event ]] || return 0
+
+  workspace_id="$(print -r -- "$event_json" | "$jq_cli" -r '.workspace_id // empty')"
+  [[ "$workspace_id" =~ '^[0-9A-Fa-f-]{36}$' ]] || return 0
+
+  # Let cmux finish inserting its keep-workspace-open placeholder.
+  sleep 0.2
+
+  workspace_json="$("$cmux_cli" workspace list --json 2>/dev/null)" || return 0
+  destination="$(print -r -- "$workspace_json" | "$jq_cli" -r --arg id "$workspace_id" \
+    '.workspaces[] | select(.id == $id) | .remote.destination // empty')"
+
+  case "$destination" in
+    phil@100.104.47.26|root@217.160.186.7) ;;
+    *) return 0 ;;
+  esac
+
+  sessions="$("$cmux_cli" ssh-session-list --workspace "$workspace_id" 2>/dev/null)" || return 0
+  if print -r -- "$sessions" | /usr/bin/grep -Eq 'attachments=[1-9][0-9]*'; then
+    return 0
+  fi
+
+  placeholder="$("$cmux_cli" identify --workspace "$workspace_id" --json 2>/dev/null \
+    | "$jq_cli" -r '.focused.surface_ref // empty')"
+  [[ "$placeholder" == surface:<-> ]] || return 0
+
+  "$cmux_cli" new-surface --workspace "$workspace_id" --focus true >/dev/null 2>&1 || return 0
+  sleep 1
+
+  sessions="$("$cmux_cli" ssh-session-list --workspace "$workspace_id" 2>/dev/null)" || return 0
+  if print -r -- "$sessions" | /usr/bin/grep -Eq 'attachments=[1-9][0-9]*'; then
+    "$cmux_cli" close-surface --workspace "$workspace_id" --surface "$placeholder" >/dev/null 2>&1 || true
+  fi
+}
+
+while true; do
+  "$cmux_cli" events --name surface.closed --reconnect --no-heartbeat 2>/dev/null \
+    | while IFS= read -r event_json; do
+        handle_surface_close "$event_json"
+      done
+  sleep 2
+done

@@ -44,3 +44,10 @@ optimizations stay consistent across the Mac, Home PC, and VPS.
 On the Mac, include `ssh/cmux-remotes.conf` from `~/.ssh/config`. The remote
 sshd must accept the cosmetic marker with `AcceptEnv P10K_MAC_SSH`. cmux-managed
 SSH workspaces also provide a fallback marker for Home PC sessions.
+
+The `cmux` stow package keeps pinned SSH workspaces alive when their final tab
+is closed. cmux itself inserts a local shell in that case, so the
+`com.phil.cmux-remote-workspace-keeper` LaunchAgent watches `surface.closed`
+events and replaces only that final placeholder with a terminal using the
+workspace's existing SSH transport. It is limited to the configured Home and
+VPS destinations and requires cmux's local `automation` socket mode.

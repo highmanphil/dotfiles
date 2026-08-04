@@ -18,3 +18,10 @@ stow nvim
 stow tmux
 stow ghostty
 stow direnv
+stow cmux
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    cmux_keeper_plist="$HOME/Library/LaunchAgents/com.phil.cmux-remote-workspace-keeper.plist"
+    launchctl bootout "gui/$(id -u)" "$cmux_keeper_plist" >/dev/null 2>&1 || true
+    launchctl bootstrap "gui/$(id -u)" "$cmux_keeper_plist"
+fi
