@@ -27,6 +27,7 @@ opt.backspace = "indent,eol,start"
 
 -- clipboard
 opt.clipboard = "unnamedplus" -- use system clipboard
+opt.sessionoptions:append("localoptions")
 
 if vim.fn.has("wsl") == 1 then
 	vim.api.nvim_create_autocmd("TextYankPost", {

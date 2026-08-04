@@ -1,5 +1,4 @@
-autoload -Uz compinit
-compinit
+# Keep Powerlevel10k's instant prompt before anything that can perform I/O.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
@@ -15,15 +14,37 @@ plugins=(
 
 [[ ! -f ~/.envs.zsh ]] || source ~/.envs.zsh
 [[ ! -f ~/.aliases.zsh ]] || source ~/.aliases.zsh
-source $ZSH/oh-my-zsh.sh
+source "$ZSH/oh-my-zsh.sh"
+
+# direnv's hook applies allowed environments on the first prompt and on every
+# directory change. Avoid a second eager `direnv export` during shell startup.
+if (( ${+commands[direnv]} )); then
+  eval "$(direnv hook zsh)"
+fi
 
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 [[ ! -f ~/.p10k-mac-ssh.zsh ]] || source ~/.p10k-mac-ssh.zsh
 
 [ -f "$HOME/.zsh_home" ] && source "$HOME/.zsh_home"
 [ -f "$HOME/.zsh_work" ] && source "$HOME/.zsh_work"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# NVM is the dominant shell-startup cost. Load it only when a Node/NVM command
+# is first used, while preserving the previous default-version behaviour.
+_load_nvm() {
+  unfunction nvm node npm npx corepack 2>/dev/null
+  if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+    source "$NVM_DIR/nvm.sh"
+  else
+    print -u2 "nvm is not installed at $NVM_DIR"
+    return 127
+  fi
+}
+
+nvm() { _load_nvm && nvm "$@" }
+node() { _load_nvm && command node "$@" }
+npm() { _load_nvm && command npm "$@" }
+npx() { _load_nvm && command npx "$@" }
+corepack() { _load_nvm && command corepack "$@" }
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
@@ -39,29 +60,30 @@ source $ZSH/oh-my-zsh.sh
 #   fi
 # fi
 
-autoload -U +X bashcompinit && bashcompinit
-complete -o nospace -C /opt/homebrew/bin/mc mc
+if (( ${+commands[mc]} )); then
+  autoload -U +X bashcompinit && bashcompinit
+  complete -o nospace -C "${commands[mc]}" mc
+fi
 
-# Added by Windsurf
-export PATH="/Users/phil/.codeium/windsurf/bin:$PATH"
-
-. "$HOME/.local/bin/env"
+[[ -r "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
 
 # bun completions
 [ -s "/home/phil/.bun/_bun" ] && source "/home/phil/.bun/_bun"
 
 # OpenClaw Completion
-source "/home/phil/.openclaw/completions/openclaw.zsh"
-
-eval "$(direnv hook zsh)"
+_openclaw_completion="$HOME/.openclaw/completions/openclaw.zsh"
+if [[ -r "$_openclaw_completion" ]]; then
+  [[ "$_openclaw_completion.zwc" -nt "$_openclaw_completion" ]] || zcompile "$_openclaw_completion" 2>/dev/null
+  source "$_openclaw_completion"
+fi
+unset _openclaw_completion
 
 # pnpm
 export PNPM_HOME="/home/phil/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
+path=("$PNPM_HOME" $path)
 # pnpm end
 
 # opencode
-export PATH=/home/phil/.opencode/bin:$PATH
+path=("$HOME/.opencode/bin" "${KREW_ROOT:-$HOME/.krew}/bin" $path)
+[[ -r "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+typeset -U path PATH

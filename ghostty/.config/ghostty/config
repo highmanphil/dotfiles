@@ -1,3 +1,5 @@
+command = zsh
+shell-integration = zsh
 window-padding-y = 20
 window-padding-balance = true
 theme = light:Catppuccin Latte,dark:Catppuccin Macchiato

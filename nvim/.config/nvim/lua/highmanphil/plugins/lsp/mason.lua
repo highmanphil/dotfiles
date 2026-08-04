@@ -1,7 +1,7 @@
 return {
 	{
 		"williamboman/mason.nvim",
-		version = "2.0.0",
+		cmd = { "Mason", "MasonInstall", "MasonUpdate", "MasonUninstall", "MasonLog" },
 		dependencies = {
 			"WhoIsSethDaniel/mason-tool-installer.nvim",
 		},
@@ -50,6 +50,7 @@ return {
 
 			mason_tool_installer.setup({
 				ensure_installed = {
+					"tree-sitter-cli",
 					"prettier", -- prettier formatter
 					"stylua", -- lua formatter
 					"pylint",
@@ -62,7 +63,6 @@ return {
 	},
 	{
 		"williamboman/mason-lspconfig.nvim",
-		version = "2.0.0",
 		dependencies = {
 			"williamboman/mason.nvim",
 		},

@@ -155,32 +155,5 @@ return {
 				-- },
 			},
 		})
-		vim.lsp.config("jdtls", {
-			settings = {
-				-- java.jdt.ls.java.home
-				java = {
-					jdt = {
-						ls = {
-							java = {
-								home = "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/",
-							},
-						},
-					},
-					configuration = {
-						runtimes = {
-							{
-								name = "JavaSE-17",
-								path = "/Library/Java/JavaVirtualMachines/openjdk-17.jdk/Contents/Home",
-								default = true,
-							},
-							{
-								name = "JavaSE-21",
-								path = "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/",
-							},
-						},
-					},
-				},
-			},
-		})
 	end,
 }
