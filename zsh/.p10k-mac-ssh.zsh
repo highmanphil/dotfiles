@@ -6,7 +6,14 @@ if [[ -z "$_p10k_mac_ssh_origin" && "${SSH_CONNECTION%% *}" == "100.123.207.72" 
   _p10k_mac_ssh_origin=home
 fi
 if [[ -z "$_p10k_mac_ssh_origin" && -n "${SSH_CONNECTION:-}" && -n "${CMUX_WORKSPACE_ID:-}" ]]; then
-  _p10k_mac_ssh_origin=home
+  # cmux-managed SSH sessions currently don't forward the host-specific
+  # SetEnv marker. Distinguish our two remotes by their login account instead
+  # of treating every managed workspace as Home.
+  if (( EUID == 0 )); then
+    _p10k_mac_ssh_origin=vps
+  else
+    _p10k_mac_ssh_origin=home
+  fi
 fi
 
 case "$_p10k_mac_ssh_origin" in
