@@ -21,6 +21,7 @@ plugins=(
 
 [[ ! -f ~/.envs.zsh ]] || source ~/.envs.zsh
 [[ ! -f ~/.aliases.zsh ]] || source ~/.aliases.zsh
+export ZSH="${ZSH:-$HOME/.oh-my-zsh}"
 source "$ZSH/oh-my-zsh.sh"
 
 # direnv's hook applies allowed environments on the first prompt and on every

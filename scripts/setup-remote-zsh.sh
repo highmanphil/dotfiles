@@ -35,6 +35,7 @@ link_config() {
 }
 
 link_config "$dotfiles_dir/zsh/.zshrc" "$HOME/.zshrc"
+link_config "$dotfiles_dir/zsh/.envs.zsh" "$HOME/.envs.zsh"
 link_config "$dotfiles_dir/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
 link_config "$dotfiles_dir/zsh/.aliases.zsh" "$HOME/.aliases.zsh"
 link_config "$dotfiles_dir/zsh/.p10k-mac-ssh.zsh" "$HOME/.p10k-mac-ssh.zsh"
