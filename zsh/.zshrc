@@ -1,3 +1,10 @@
+# Codex snapshots source .zshrc non-interactively. Export the portable
+# environment without loading the interactive prompt and plugin stack.
+if [[ ! -o interactive ]]; then
+  [[ ! -f ~/.envs.zsh ]] || source ~/.envs.zsh
+  return
+fi
+
 # Keep Powerlevel10k's instant prompt before anything that can perform I/O.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
@@ -68,7 +75,7 @@ fi
 [[ -r "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
 
 # bun completions
-[ -s "/home/phil/.bun/_bun" ] && source "/home/phil/.bun/_bun"
+[ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
 
 # OpenClaw Completion
 _openclaw_completion="$HOME/.openclaw/completions/openclaw.zsh"
@@ -79,7 +86,7 @@ fi
 unset _openclaw_completion
 
 # pnpm
-export PNPM_HOME="/home/phil/.local/share/pnpm"
+export PNPM_HOME="$HOME/.local/share/pnpm"
 path=("$PNPM_HOME" $path)
 # pnpm end
 

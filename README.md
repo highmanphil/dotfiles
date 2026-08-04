@@ -38,6 +38,9 @@ On a Linux remote that has this repository at `~/dotfiles`, run:
 ~/dotfiles/scripts/setup-remote-zsh.sh
 ```
 
+The setup script links the shared portable `zsh/.zshrc`, so shell startup
+optimizations stay consistent across the Mac, Home PC, and VPS.
+
 On the Mac, include `ssh/cmux-remotes.conf` from `~/.ssh/config`. The remote
 sshd must accept the cosmetic marker with `AcceptEnv P10K_MAC_SSH`. cmux-managed
 SSH workspaces also provide a fallback marker for Home PC sessions.
