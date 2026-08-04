@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fleet"
+  short_description: "Manage and synchronize Phil’s three machines"
+  default_prompt: "Use $fleet to inspect, synchronize, or operate my Mac, Home PC, and VPS."

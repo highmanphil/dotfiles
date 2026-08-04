@@ -51,3 +51,18 @@ is closed. cmux itself inserts a local shell in that case, so the
 events and replaces only that final placeholder with a terminal using the
 workspace's existing SSH transport. It is limited to the configured Home and
 VPS destinations and requires cmux's local `automation` socket mode.
+
+## Fleet management
+
+The Mac, Home PC, and VPS share global Codex instructions and the fleet skill
+from the `agents` package. From either the Mac or Home PC:
+
+```sh
+~/.codex/skills/fleet/scripts/fleetctl status all
+~/.codex/skills/fleet/scripts/fleetctl exec vps -- uptime
+```
+
+Run `~/dotfiles/scripts/setup-fleet.sh` after pulling changes. It links global
+AGENTS.md, the fleet skill, shared zsh/P10k files, Mac cmux settings, and Home
+PC limux settings. It never creates backup copies; an unmanaged conflicting
+file is refused unless `--replace-managed` is explicitly supplied.

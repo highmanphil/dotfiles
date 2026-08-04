@@ -1,0 +1,14 @@
+{
+  "appearance": {
+    "color_scheme": "system",
+    "ghostty_color_scheme": "system"
+  },
+  "focus": {
+    "hover_terminal_focus": false
+  },
+  "font_size": 10.0,
+  "notifications": {
+    "enabled": true,
+    "sound": "default"
+  }
+}

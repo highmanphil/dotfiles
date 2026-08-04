@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  fleetctl status [mac|home|vps|all]
+  fleetctl exec <mac|home|vps> -- <command> [args...]
+  fleetctl sync [mac|home|vps|all]
+EOF
+}
+
+controller() {
+  case "$(hostname -s 2>/dev/null || hostname)" in
+    Philipps-MacBook-Air|philipps-macbook-air) printf 'mac\n' ;;
+    phil-cachyos) printf 'home\n' ;;
+    ubuntu) printf 'vps\n' ;;
+    *)
+      case "$(uname -s)" in
+        Darwin) printf 'mac\n' ;;
+        *) printf 'unknown\n' ;;
+      esac
+      ;;
+  esac
+}
+
+endpoint() {
+  case "$1" in
+    mac) printf 'phil@100.123.207.72\n' ;;
+    home) printf 'phil@100.104.47.26\n' ;;
+    vps) printf 'root@217.160.186.7\n' ;;
+    *) return 2 ;;
+  esac
+}
+
+identity() {
+  case "$(controller):$1" in
+    mac:home|mac:vps) printf '%s/.ssh/id_rsa\n' "$HOME" ;;
+    home:mac|home:vps) printf '%s/.ssh/id_gmx\n' "$HOME" ;;
+    *) return 2 ;;
+  esac
+}
+
+run_on() {
+  local target="$1"
+  shift
+  if [[ "$target" == "$(controller)" ]]; then
+    "$@"
+    return
+  fi
+  if [[ "$(controller)" == vps || "$(controller)" == unknown ]]; then
+    printf 'This host is not configured as a fleet controller.\n' >&2
+    return 2
+  fi
+  local key
+  key="$(identity "$target")"
+  [[ -f "$key" ]] || { printf 'Missing fleet identity: %s\n' "$key" >&2; return 2; }
+  local remote_command='' quoted argument
+  for argument in "$@"; do
+    printf -v quoted '%q' "$argument"
+    remote_command="${remote_command}${quoted} "
+  done
+  ssh -o BatchMode=yes -o ConnectTimeout=8 -o IdentitiesOnly=yes -i "$key" "$(endpoint "$target")" "$remote_command"
+}
+
+status_one() {
+  local target="$1"
+  printf '\n== %s ==\n' "$target"
+  run_on "$target" sh -lc '
+    printf "host=%s user=%s os=%s\n" "$(hostname)" "$(id -un)" "$(uname -s)"
+    if [ -d "$HOME/dotfiles/.git" ]; then
+      git -C "$HOME/dotfiles" status --short --branch
+    else
+      printf "dotfiles=missing\n"
+    fi
+    for item in "$HOME/.codex/AGENTS.md" "$HOME/.codex/skills/fleet"; do
+      if [ -L "$item" ]; then
+        printf "%s -> %s\n" "$item" "$(readlink "$item")"
+      elif [ -e "$item" ]; then
+        printf "%s (not a symlink)\n" "$item"
+      else
+        printf "%s (missing)\n" "$item"
+      fi
+    done
+  '
+}
+
+sync_one() {
+  local target="$1"
+  printf '\n== syncing %s ==\n' "$target"
+  run_on "$target" sh -lc '
+    set -eu
+    cd "$HOME/dotfiles"
+    if [ -n "$(git status --porcelain)" ]; then
+      printf "Refusing to sync a dirty dotfiles checkout:\n" >&2
+      git status --short >&2
+      exit 20
+    fi
+    git pull --ff-only
+    "$HOME/dotfiles/scripts/setup-fleet.sh"
+  '
+}
+
+command_name="${1:-}"
+case "$command_name" in
+  status)
+    target="${2:-all}"
+    if [[ "$target" == all ]]; then
+      for host in mac home vps; do status_one "$host"; done
+    else
+      status_one "$target"
+    fi
+    ;;
+  exec)
+    target="${2:-}"
+    [[ -n "$target" ]] || { usage >&2; exit 2; }
+    shift 2
+    [[ "${1:-}" == -- ]] && shift
+    [[ "$#" -gt 0 ]] || { usage >&2; exit 2; }
+    run_on "$target" "$@"
+    ;;
+  sync)
+    target="${2:-all}"
+    if [[ "$target" == all ]]; then
+      for host in mac home vps; do sync_one "$host"; done
+    else
+      sync_one "$target"
+    fi
+    ;;
+  *) usage >&2; exit 2 ;;
+esac

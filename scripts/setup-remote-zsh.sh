@@ -2,7 +2,7 @@
 set -euo pipefail
 
 dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
-timestamp="$(date +%Y%m%d-%H%M%S)"
+replace_managed="${REPLACE_MANAGED:-0}"
 
 if [[ "$(id -u)" -eq 0 ]]; then
   sudo_cmd=()
@@ -29,7 +29,13 @@ clone_if_missing https://github.com/Aloxaf/fzf-tab.git "$HOME/.oh-my-zsh/custom/
 link_config() {
   local source="$1" destination="$2"
   if [[ -e "$destination" && ! -L "$destination" ]]; then
-    mv "$destination" "$destination.codex-backup-$timestamp"
+    if cmp -s "$source" "$destination" || [[ "$replace_managed" == "1" ]]; then
+      rm "$destination"
+    else
+      printf 'Refusing to replace unmanaged file: %s\n' "$destination" >&2
+      printf 'Review it, then rerun with REPLACE_MANAGED=1. No backup file was created.\n' >&2
+      return 1
+    fi
   fi
   ln -sfn "$source" "$destination"
 }
