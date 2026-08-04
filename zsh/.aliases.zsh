@@ -15,3 +15,8 @@ alias kw="watch kubectl"
 stowit() {
   (cd ~/dotfiles && stow "$@")
 }
+
+# Personal skill installs are captured and deployed to the whole fleet.
+skills() {
+  "$HOME/dotfiles/scripts/fleet-skills.sh" install "$@"
+}

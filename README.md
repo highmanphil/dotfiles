@@ -66,3 +66,13 @@ Run `~/dotfiles/scripts/setup-fleet.sh` after pulling changes. It links global
 AGENTS.md, the fleet skill, shared zsh/P10k files, Mac cmux settings, and Home
 PC limux settings. It never creates backup copies; an unmanaged conflicting
 file is refused unless `--replace-managed` is explicitly supplied.
+
+Personal skill names are declared in `agents/skills-manifest.txt`. Their
+contents are kept out of this public repository and synchronized directly over
+fleet SSH through `~/.local/share/fleet-skills/`. In interactive zsh, the
+`skills` command wraps the official Skills CLI and deploys successful installs
+to the full fleet. After an installation performed by another tool, run:
+
+```sh
+~/dotfiles/scripts/fleet-skills.sh capture-and-sync
+```

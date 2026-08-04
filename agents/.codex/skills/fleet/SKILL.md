@@ -41,15 +41,24 @@ Targets are `mac`, `home`, `vps`, or `all` where supported. The controller choos
 
 ## Skill synchronization
 
-Keep custom shared skills in the `agents/.codex/skills/` dotfiles package. Link them into `~/.codex/skills/` with the setup script.
+The selected personal skill names live in `~/dotfiles/agents/skills-manifest.txt`. Skill contents live outside the public Git repository in `~/.local/share/fleet-skills/` and synchronize directly over authenticated fleet SSH. `setup-fleet.sh` links that store into `~/.agents/skills/` and removes personal skills outside the manifest.
+
+Install a skill from interactive zsh with the wrapped `skills` command. It invokes the official Skills CLI, captures the resulting personal skill package, sends the shared store directly to the other machines, commits only the non-sensitive manifest when needed, and deploys the links fleet-wide.
+
+After installing or editing a skill by another method, run:
+
+```sh
+~/dotfiles/scripts/fleet-skills.sh capture-and-sync
+```
+
+Never copy internal skill contents into the public dotfiles repository. In particular, keep `a1-jira-confluence` and `company-brain` only in the direct SSH-synchronized store.
 
 Do not synchronize these as ordinary personal skills:
 
 - `.system` and product-managed runtime/plugin skills.
-- Repository-local skills such as `company-brain` whose canonical source is another checkout; preserve their repository symlinks.
 - Broken or temporary symlinks.
 
-Use the official `skills` CLI for provenance and updates of third-party skills when appropriate. Use the dotfiles repo for Phil's own fleet skill and other custom skills. Do not install the union of discovered skills everywhere until Phil selects which ones should be global.
+The uniform selected personal set is: `a1-jira-confluence`, `company-brain`, `diagnose`, `grill-me`, `grill-with-docs`, `grilling`, `handoff`, `hatch-pet`, `prototype`, `research`, `to-spec`, `to-tickets`, and `wayfinder`. `$fleet` remains managed directly by dotfiles. Product-managed `.system`, plugin-cache, and `codex-*` runtime skills are outside this personal manifest and may vary by platform.
 
 ## Platform scope
 

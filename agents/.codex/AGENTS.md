@@ -7,7 +7,6 @@
 - For mixed requests, use `$company-brain` only for the company-dependent portion and keep technical conclusions grounded in the current code.
 - An empty or inconclusive Codex memory lookup is not a reason to invoke `$company-brain`.
 - Treat the company-brain repository as canonical for organizational and business facts; cite its files and do not guess when knowledge is missing, stale, or conflicting.
-- Use `$company-brain-maintainer` for explicit capture, ingestion, correction, or maintenance work.
 <!-- END company-brain routing -->
 
 ## File handling
@@ -19,4 +18,5 @@
 
 - Invoke `$fleet` for work involving the Mac, Home PC, VPS, fleet SSH, fleet synchronization, global AGENTS.md, shared skills, dotfiles, cmux, or limux.
 - Keep shared fleet configuration canonical in `~/dotfiles`; link managed files into their standard locations rather than maintaining divergent copies.
+- After installing or updating a personal skill by any method, run `~/dotfiles/scripts/fleet-skills.sh capture-and-sync` so the same personal skill set is deployed to the whole fleet. In an interactive zsh, prefer the wrapped `skills` command, which performs this automatically.
 - Never commit private SSH keys, access tokens, passwords, or other secrets to dotfiles. Distribute only public SSH keys.
