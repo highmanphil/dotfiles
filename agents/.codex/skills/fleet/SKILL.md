@@ -59,7 +59,7 @@ Do not synchronize these as ordinary personal skills:
 - `.system` and product-managed runtime/plugin skills.
 - Broken or temporary symlinks.
 
-The uniform selected personal set is: `a1-jira-confluence`, `company-brain`, `diagnose`, `grill-me`, `grill-with-docs`, `grilling`, `handoff`, `hatch-pet`, `prototype`, `research`, `to-questionnaire`, `to-spec`, `to-tickets`, `wait-what`, `wayfinder`, `wizard`, and `writing-for-agents`. `$fleet` remains managed directly by dotfiles. Product-managed `.system`, plugin-cache, and `codex-*` runtime skills are outside this personal manifest and may vary by platform.
+The uniform selected personal set is: `a1-jira-confluence`, `company-brain`, `diagnose`, `grill-me`, `grill-with-docs`, `grilling`, `handoff`, `hatch-pet`, `prototype`, `research`, `to-spec`, `to-tickets`, `wayfinder`, `wizard`, and `writing-for-agents`. `$fleet` remains managed directly by dotfiles. Product-managed `.system`, plugin-cache, and `codex-*` runtime skills are outside this personal manifest and may vary by platform.
 
 ## Platform scope
 
