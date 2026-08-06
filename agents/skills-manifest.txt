@@ -11,5 +11,3 @@ research
 to-spec
 to-tickets
 wayfinder
-wizard
-writing-for-agents
