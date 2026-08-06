@@ -1,5 +1,4 @@
 a1-jira-confluence
-code-review
 company-brain
 diagnose
 grill-me

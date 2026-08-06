@@ -1,4 +1,7 @@
 interface:
   display_name: "Fleet"
   short_description: "Manage and synchronize Phil’s three machines"
+  icon_small: "./assets/fleet-small.svg"
+  icon_large: "./assets/fleet.png"
+  brand_color: "#2563EB"
   default_prompt: "Use $fleet to inspect, synchronize, or operate my Mac, Home PC, and VPS."
