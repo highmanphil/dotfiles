@@ -1,4 +1,5 @@
 a1-jira-confluence
+code-review
 company-brain
 diagnose
 grill-me
@@ -8,6 +9,10 @@ handoff
 hatch-pet
 prototype
 research
+to-questionnaire
 to-spec
 to-tickets
+wait-what
 wayfinder
+wizard
+writing-for-agents
