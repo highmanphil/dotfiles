@@ -30,24 +30,25 @@ Targets are `mac`, `home`, `vps`, or `all` where supported. The controller choos
 
 ## Synchronization workflow
 
-1. Inspect all hosts with `fleetctl status all`.
+1. Inspect all hosts with `fleetctl status all`. An unavailable host is reported as pending without preventing inspection of the remaining hosts.
 2. Work in the controller's `~/dotfiles` checkout and preserve unrelated changes.
 3. Commit and push only the intended files.
-4. Run `fleetctl sync home`, `fleetctl sync vps`, and `fleetctl sync mac` as appropriate. Sync refuses dirty repositories and uses `git pull --ff-only`.
-5. Validate global AGENTS and fleet skill symlinks with another `status all`.
-6. Validate shell changes with `zsh -n ~/.zshrc` and a genuine interactive PTY. For Powerlevel10k and direnv, keep `direnv export zsh` before the instant-prompt preamble and install the hook immediately after it.
+4. Run `fleetctl converge all` for immediate best-effort deployment. Every host also runs `fleet-converge.sh` at boot or login and every 15 minutes, so offline machines converge after they return.
+5. Convergence refuses dirty repositories and fast-forwards from the canonical Git origins. Inspect desired versus applied skill revisions with another `status all`.
+6. Validate global AGENTS and fleet skill symlinks, then validate shell changes with `zsh -n ~/.zshrc` and a genuine interactive PTY. For Powerlevel10k and direnv, keep `direnv export zsh` before the instant-prompt preamble and install the hook immediately after it.
 
 `~/dotfiles/scripts/setup-fleet.sh` manages global AGENTS, this skill, zsh links, and platform-specific cmux/limux configuration. It never creates backup files. Replacing a non-symlink managed file requires the explicit `--replace-managed` flag.
 
 ## Skill synchronization
 
-The selected personal skill names live in `~/dotfiles/agents/skills-manifest.txt`. Skill contents live outside the public Git repository in `~/.local/share/fleet-skills/` and synchronize directly over authenticated fleet SSH. `setup-fleet.sh` links that store into `~/.agents/skills/` and removes personal skills outside the manifest.
+Skill contents and their runtime manifest live in the private `highmanphil/fleet-skills` GitHub repository, checked out at `~/.local/share/fleet-skills/`. Each host authenticates with its own machine-local deploy key. Mac and Home PC have publish access; VPS is read-only. The public `~/dotfiles/agents/skills-manifest.txt` remains a non-sensitive mirror. `setup-fleet.sh` links the private store into `~/.agents/skills/` and removes personal skills outside the manifest.
 
-Install a skill from interactive zsh with the wrapped `skills` command. It invokes the official Skills CLI, captures the resulting personal skill package, sends the shared store directly to the other machines, commits only the non-sensitive manifest when needed, and deploys the links fleet-wide.
+Install a skill from interactive zsh with the wrapped `skills` command. It invokes the official Skills CLI, captures the resulting personal skill package, commits and publishes one private Git revision, updates the non-sensitive manifest mirror when needed, and attempts immediate convergence. Offline peers remain pending and retry automatically.
 
-After installing or editing a skill by another method, run:
+After installing or editing a skill by another method, run either equivalent command:
 
 ```sh
+~/dotfiles/scripts/fleet-skills.sh capture-and-publish
 ~/dotfiles/scripts/fleet-skills.sh capture-and-sync
 ```
 

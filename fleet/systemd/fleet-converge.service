@@ -1,0 +1,8 @@
+[Unit]
+Description=Converge personal fleet configuration
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/dotfiles/scripts/fleet-converge.sh

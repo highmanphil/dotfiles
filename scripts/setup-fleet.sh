@@ -30,8 +30,9 @@ link_managed() {
 link_managed "$dotfiles_dir/agents/.codex/AGENTS.md" "$HOME/.codex/AGENTS.md"
 link_managed "$dotfiles_dir/agents/.codex/skills/fleet" "$HOME/.codex/skills/fleet"
 
-skill_manifest="$dotfiles_dir/agents/skills-manifest.txt"
 skill_store="$HOME/.local/share/fleet-skills"
+skill_manifest="$skill_store/skills-manifest.txt"
+[[ -f "$skill_manifest" ]] || skill_manifest="$dotfiles_dir/agents/skills-manifest.txt"
 mkdir -p "$HOME/.agents/skills" "$HOME/.codex/skills" "$skill_store"
 
 skill_selected() {
@@ -84,9 +85,24 @@ done
 case "$(uname -s):$(hostname -s 2>/dev/null || hostname)" in
   Darwin:*)
     link_managed "$dotfiles_dir/cmux/.config/cmux/cmux.json" "$HOME/.config/cmux/cmux.json"
+    link_managed "$dotfiles_dir/fleet/macos/com.highmanphil.fleet-converge.plist" "$HOME/Library/LaunchAgents/com.highmanphil.fleet-converge.plist"
+    if launchctl print "gui/$(id -u)" >/dev/null 2>&1 && \
+       ! launchctl print "gui/$(id -u)/com.highmanphil.fleet-converge" >/dev/null 2>&1; then
+      launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.highmanphil.fleet-converge.plist"
+    fi
     ;;
   Linux:phil-cachyos)
     link_managed "$dotfiles_dir/limux/.config/limux/settings.json" "$HOME/.config/limux/settings.json"
+    link_managed "$dotfiles_dir/fleet/systemd/fleet-converge.service" "$HOME/.config/systemd/user/fleet-converge.service"
+    link_managed "$dotfiles_dir/fleet/systemd/fleet-converge.timer" "$HOME/.config/systemd/user/fleet-converge.timer"
+    systemctl --user daemon-reload
+    systemctl --user enable --now fleet-converge.timer
+    ;;
+  Linux:ubuntu)
+    link_managed "$dotfiles_dir/fleet/systemd/fleet-converge-root.service" "/etc/systemd/system/fleet-converge.service"
+    link_managed "$dotfiles_dir/fleet/systemd/fleet-converge.timer" "/etc/systemd/system/fleet-converge.timer"
+    systemctl daemon-reload
+    systemctl enable --now fleet-converge.timer
     ;;
 esac
 

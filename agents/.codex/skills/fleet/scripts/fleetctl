@@ -7,6 +7,7 @@ Usage:
   fleetctl status [mac|home|vps|all]
   fleetctl exec <mac|home|vps> -- <command> [args...]
   fleetctl sync [mac|home|vps|all]
+  fleetctl converge [mac|home|vps|all]
 EOF
 }
 
@@ -82,34 +83,66 @@ status_one() {
         printf "%s (missing)\n" "$item"
       fi
     done
+    skill_store="$HOME/.local/share/fleet-skills"
+    if [ -d "$skill_store/.git" ]; then
+      if [ -n "$(git -C "$skill_store" status --porcelain)" ]; then
+        skill_state=dirty
+      elif git -C "$skill_store" fetch --quiet origin main; then
+        skill_local="$(git -C "$skill_store" rev-parse HEAD)"
+        skill_origin="$(git -C "$skill_store" rev-parse origin/main)"
+        if [ "$skill_local" = "$skill_origin" ]; then
+          skill_state=current
+        elif git -C "$skill_store" merge-base --is-ancestor "$skill_local" "$skill_origin"; then
+          skill_state=pending
+        elif git -C "$skill_store" merge-base --is-ancestor "$skill_origin" "$skill_local"; then
+          skill_state=ahead
+        else
+          skill_state=diverged
+        fi
+        printf "skills=%s local=%s desired=%s\n" "$skill_state" "$(git -C "$skill_store" rev-parse --short "$skill_local")" "$(git -C "$skill_store" rev-parse --short "$skill_origin")"
+      else
+        printf "skills=fetch-error local=%s desired=unknown\n" "$(git -C "$skill_store" rev-parse --short HEAD)"
+      fi
+      [ "${skill_state:-}" = dirty ] && printf "skills=dirty local=%s desired=unknown\n" "$(git -C "$skill_store" rev-parse --short HEAD)"
+    else
+      printf "skills=unmanaged\n"
+    fi
+    if [ -f "$HOME/.local/state/fleet/last-success" ]; then
+      printf "last_converged=%s\n" "$(sed -n "1p" "$HOME/.local/state/fleet/last-success")"
+    else
+      printf "last_converged=never\n"
+    fi
+    if [ -f "$HOME/.local/state/fleet/last-error" ]; then
+      printf "last_error=%s\n" "$(sed -n "1p" "$HOME/.local/state/fleet/last-error")"
+    fi
   '
 }
 
 sync_one() {
   local target="$1"
   printf '\n== syncing %s ==\n' "$target"
-  run_on "$target" sh -lc '
-    set -eu
-    cd "$HOME/dotfiles"
-    if [ -n "$(git status --porcelain)" ]; then
-      printf "Refusing to sync a dirty dotfiles checkout:\n" >&2
-      git status --short >&2
-      exit 20
-    fi
-    git pull --ff-only
-    "$HOME/dotfiles/scripts/setup-fleet.sh"
-  '
+  run_on "$target" sh -lc 'exec "$HOME/dotfiles/scripts/fleet-converge.sh"'
+}
+
+run_for_targets() {
+  local operation="$1" target="$2" host failed=0
+  if [[ "$target" == all ]]; then
+    for host in mac home vps; do
+      if ! "$operation" "$host"; then
+        printf '%s is unavailable or failed; it remains pending.\n' "$host" >&2
+        failed=1
+      fi
+    done
+    return "$failed"
+  fi
+  "$operation" "$target"
 }
 
 command_name="${1:-}"
 case "$command_name" in
   status)
     target="${2:-all}"
-    if [[ "$target" == all ]]; then
-      for host in mac home vps; do status_one "$host"; done
-    else
-      status_one "$target"
-    fi
+    run_for_targets status_one "$target"
     ;;
   exec)
     target="${2:-}"
@@ -121,11 +154,11 @@ case "$command_name" in
     ;;
   sync)
     target="${2:-all}"
-    if [[ "$target" == all ]]; then
-      for host in mac home vps; do sync_one "$host"; done
-    else
-      sync_one "$target"
-    fi
+    run_for_targets sync_one "$target"
+    ;;
+  converge)
+    target="${2:-all}"
+    run_for_targets sync_one "$target"
     ;;
   *) usage >&2; exit 2 ;;
 esac

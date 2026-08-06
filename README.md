@@ -67,12 +67,15 @@ AGENTS.md, the fleet skill, shared zsh/P10k files, Mac cmux settings, and Home
 PC limux settings. It never creates backup copies; an unmanaged conflicting
 file is refused unless `--replace-managed` is explicitly supplied.
 
-Personal skill names are declared in `agents/skills-manifest.txt`. Their
-contents are kept out of this public repository and synchronized directly over
-fleet SSH through `~/.local/share/fleet-skills/`. In interactive zsh, the
-`skills` command wraps the official Skills CLI and deploys successful installs
-to the full fleet. After an installation performed by another tool, run:
+Personal skill contents and their runtime manifest are kept out of this public
+repository in the private `highmanphil/fleet-skills` repository, checked out at
+`~/.local/share/fleet-skills/`. The non-sensitive manifest is mirrored at
+`agents/skills-manifest.txt`. Every machine pulls and applies desired state at
+boot or login and every 15 minutes, so machines that were offline converge
+after they return. In interactive zsh, the `skills` command wraps the official
+Skills CLI and publishes successful installs. After an installation performed
+by another tool, run:
 
 ```sh
-~/dotfiles/scripts/fleet-skills.sh capture-and-sync
+~/dotfiles/scripts/fleet-skills.sh capture-and-publish
 ```

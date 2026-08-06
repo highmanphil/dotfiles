@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodically converge personal fleet configuration
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+RandomizedDelaySec=60
+Unit=fleet-converge.service
+
+[Install]
+WantedBy=timers.target

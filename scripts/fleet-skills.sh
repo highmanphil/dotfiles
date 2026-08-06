@@ -4,6 +4,8 @@ set -euo pipefail
 dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
 manifest="$dotfiles_dir/agents/skills-manifest.txt"
 skill_store="${FLEET_SKILL_STORE:-$HOME/.local/share/fleet-skills}"
+skill_remote="${FLEET_SKILL_REMOTE:-git@github.com:highmanphil/fleet-skills.git}"
+skill_identity="${FLEET_SKILL_IDENTITY:-$HOME/.ssh/id_fleet_skills_github}"
 
 controller() {
   case "$(hostname -s 2>/dev/null || hostname)" in
@@ -82,9 +84,13 @@ capture_installed() {
 }
 
 refresh_manifest() {
-  local temporary
+  local temporary store_manifest
   temporary="$(mktemp)"
-  find "$skill_store" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | LC_ALL=C sort -u > "$temporary"
+  store_manifest="$skill_store/skills-manifest.txt"
+  find "$skill_store" -mindepth 1 -maxdepth 1 -type d ! -name .git -exec basename {} \; | LC_ALL=C sort -u > "$temporary"
+  if ! cmp -s "$temporary" "$store_manifest"; then
+    cp "$temporary" "$store_manifest"
+  fi
   if ! cmp -s "$temporary" "$manifest"; then
     mv "$temporary" "$manifest"
   else
@@ -92,15 +98,40 @@ refresh_manifest() {
   fi
 }
 
-push_store_to() {
-  local target="$1" key remote
-  [[ "$target" == "$(controller)" ]] && return
-  key="$(identity "$target")"
-  remote="$(endpoint "$target")"
-  ssh -o BatchMode=yes -o IdentitiesOnly=yes -i "$key" "$remote" 'mkdir -p "$HOME/.local/share/fleet-skills"'
-  rsync -a --delete \
-    -e "ssh -o BatchMode=yes -o IdentitiesOnly=yes -i $key" \
-    "$skill_store/" "$remote:.local/share/fleet-skills/"
+configure_skill_repo() {
+  [[ -d "$skill_store/.git" ]] || {
+    printf 'The private fleet skill repository is not initialized: %s\n' "$skill_store" >&2
+    exit 20
+  }
+  [[ -f "$skill_identity" ]] || {
+    printf 'Missing fleet skill GitHub identity: %s\n' "$skill_identity" >&2
+    exit 2
+  }
+  git -C "$skill_store" config core.sshCommand \
+    "ssh -o BatchMode=yes -o IdentitiesOnly=yes -i $skill_identity"
+  git -C "$skill_store" remote set-url origin "$skill_remote"
+  git -C "$skill_store" fetch origin main
+
+  local local_head remote_head
+  local_head="$(git -C "$skill_store" rev-parse HEAD)"
+  remote_head="$(git -C "$skill_store" rev-parse origin/main)"
+  if [[ "$local_head" != "$remote_head" ]]; then
+    if [[ -z "$(git -C "$skill_store" status --porcelain)" ]] && \
+       git -C "$skill_store" merge-base --is-ancestor "$local_head" "$remote_head"; then
+      git -C "$skill_store" merge --ff-only "$remote_head"
+    elif ! git -C "$skill_store" merge-base --is-ancestor "$remote_head" "$local_head"; then
+      printf 'Private skill store has diverged from origin/main; resolve it before publishing.\n' >&2
+      exit 20
+    fi
+  fi
+}
+
+commit_and_push_store() {
+  git -C "$skill_store" add --all
+  if ! git -C "$skill_store" diff --cached --quiet; then
+    git -C "$skill_store" commit -m 'Synchronize fleet skills'
+  fi
+  git -C "$skill_store" push origin HEAD:main
 }
 
 commit_manifest_if_changed() {
@@ -111,14 +142,18 @@ commit_manifest_if_changed() {
   fi
 }
 
-capture_and_sync() {
+capture_and_publish() {
   require_controller
   require_clean_current_repo
+  configure_skill_repo
   capture_installed
   refresh_manifest
+  commit_and_push_store
   commit_manifest_if_changed
-  for target in mac home vps; do push_store_to "$target"; done
-  "$HOME/.codex/skills/fleet/scripts/fleetctl" sync all
+  "$dotfiles_dir/scripts/setup-fleet.sh"
+  if ! "$HOME/.codex/skills/fleet/scripts/fleetctl" converge all; then
+    printf 'Published successfully; one or more peers remain pending and will retry automatically.\n' >&2
+  fi
 }
 
 case "${1:-}" in
@@ -127,14 +162,18 @@ case "${1:-}" in
     require_controller
     require_clean_current_repo
     npx --yes skills "$@"
-    capture_and_sync
+    capture_and_publish
     ;;
   capture-and-sync)
-    capture_and_sync
+    capture_and_publish
+    ;;
+  capture-and-publish)
+    capture_and_publish
     ;;
   *)
     printf 'Usage: fleet-skills.sh install <skills-cli arguments...>\n' >&2
     printf '       fleet-skills.sh capture-and-sync\n' >&2
+    printf '       fleet-skills.sh capture-and-publish\n' >&2
     exit 2
     ;;
 esac
