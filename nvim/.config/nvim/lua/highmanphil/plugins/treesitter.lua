@@ -30,6 +30,7 @@ local ensure_installed = {
 
 return {
 	"nvim-treesitter/nvim-treesitter",
+	branch = "main",
 	event = { "BufReadPre", "BufNewFile" },
 	build = function()
 		local treesitter = require("nvim-treesitter")

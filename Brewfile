@@ -74,6 +74,8 @@ brew "tmuxinator-completion"
 brew "tmuxinator"
 # Display directories as trees (with optional color/HTML output)
 brew "tree"
+# Parser generator CLI required by nvim-treesitter's main branch
+brew "tree-sitter-cli"
 # Extremely fast Python package installer and resolver, written in Rust
 brew "uv"
 # Executes a program periodically, showing output fullscreen
