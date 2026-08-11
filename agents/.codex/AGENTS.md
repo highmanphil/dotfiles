@@ -14,6 +14,18 @@
 - Do not create `.bak`, `.backup`, timestamped backup copies, `codex-backup` files, or similar duplicate safety files.
 - Use version control, an explicit diff, or the operating system Trash for recoverability. If a tool or workflow truly requires a backup file, ask before creating it.
 
+## Repository freshness
+
+- Before answering a question whose correctness depends on repository contents, or before modifying a repository, establish the Git root, current branch or detached HEAD, worktree status, configured remotes, and upstream branch.
+- Refresh the relevant upstream remote with `git fetch --prune <remote>` before treating local remote-tracking refs as current. A local `git status` without a fetch is not proof that the checkout matches the remote.
+- Compare the checked-out commit with its upstream after fetching.
+- For read-only questions: if the checked-out branch is behind or diverged, do not present the local checkout as current. Report the state and ask whether to update the checkout, or clearly label an answer based on the fetched remote-tracking branch.
+- For requested changes: if the branch is strictly behind its upstream and the worktree can be updated safely, fast-forward with `git pull --ff-only` before editing.
+- Never silently merge, rebase, reset, switch branches, discard changes, or stash user work. If the worktree is dirty and an update is needed, or the branch has diverged, stop and ask for direction.
+- If fetching is unavailable, authentication fails, no upstream is configured, or HEAD is detached, state that freshness could not be verified and avoid claiming the repository is current.
+- When the task materially depends on another local repository, apply the same freshness check to that repository before relying on it. Do not fetch or update unrelated repositories.
+- For long-running work, fetch and compare again before committing, rebasing, opening a pull request, or giving a final current-state verdict.
+
 ## Fleet
 
 - Invoke `$fleet` for work involving the Mac, Home PC, VPS, fleet SSH, fleet synchronization, global AGENTS.md, shared skills, dotfiles, cmux, or limux.
