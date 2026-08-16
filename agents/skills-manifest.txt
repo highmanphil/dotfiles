@@ -1,6 +1,7 @@
 a1-jira-confluence
 company-brain
 diagnose
+domain-modeling
 grill-me
 grill-with-docs
 grilling
