@@ -29,6 +29,8 @@ if [[ "$OSTYPE" == darwin* ]]; then
   )
 fi
 
+[[ -d "/home/phil/.nvm/versions/node/v24.18.0/bin/" ]] && path=("/home/phil/.nvm/versions/node/v24.18.0/bin" $path) # nvm
+
 [[ -d "$HOME/.codeium/windsurf/bin" ]] && path=("$HOME/.codeium/windsurf/bin" $path)
 
 export VOXINPUT_BASE_URL="http://127.0.0.1:8080/v1"
