@@ -28,7 +28,8 @@
 
 ## Fleet
 
-- Invoke `$fleet` for work involving the Mac, Home PC, VPS, fleet SSH, fleet synchronization, global AGENTS.md, shared skills, dotfiles, cmux, or limux.
+- Invoke `$fleet` when the task requires coordination between machines, fleet SSH, fleet synchronization or convergence, or a change to shared fleet-managed configuration such as global AGENTS.md, shared personal skills, dotfiles, cmux, or limux.
+- Do not invoke `$fleet` merely because work runs on or mentions the Mac, Home PC, or VPS. Ordinary single-machine diagnosis, package/app maintenance, hardware troubleshooting, and local configuration inspection should use the directly relevant workflow unless the result will be made canonical in dotfiles or deployed to another machine.
 - Keep shared fleet configuration canonical in `~/dotfiles`; link managed files into their standard locations rather than maintaining divergent copies.
 - After installing or updating a personal skill by any method, run `~/dotfiles/scripts/fleet-skills.sh capture-and-sync` so the same personal skill set is deployed to the whole fleet. In an interactive zsh, prefer the wrapped `skills` command, which performs this automatically.
 - Never commit private SSH keys, access tokens, passwords, or other secrets to dotfiles. Distribute only public SSH keys.

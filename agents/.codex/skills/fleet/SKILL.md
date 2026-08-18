@@ -1,11 +1,17 @@
 ---
 name: fleet
-description: Manage Phil's Mac, Home PC, and VPS as one controlled fleet. Use for SSH connectivity between these machines, executing or inspecting commands across hosts, synchronizing global AGENTS.md, selected personal skills, and dotfiles, configuring Mac cmux or Home PC limux, auditing fleet state, or repairing fleet configuration drift.
+description: Coordinate Phil's Mac, Home PC, and VPS when work crosses machines or changes shared fleet-managed state. Use for fleet SSH, cross-host execution or inspection, synchronization and convergence, global AGENTS.md, shared personal skills, dotfiles, cmux or limux configuration, fleet audits, and configuration-drift repair. Do not use for ordinary diagnosis, hardware troubleshooting, app or package maintenance, or local-only configuration merely because it happens on one fleet machine.
 ---
 
 # Fleet
 
 Manage the three machines from either the Mac or Home PC while keeping shared configuration in the dotfiles Git repository. Read [references/hosts.md](references/hosts.md) before changing connectivity, keys, or machine-specific configuration.
+
+## Invocation boundary
+
+Use this skill when the task needs at least one fleet-specific capability: coordinating or comparing hosts, using fleet SSH, changing canonical shared configuration in `~/dotfiles`, synchronizing or converging managed state, or repairing drift between desired and applied fleet state.
+
+Do not use it for a task confined to the current machine unless the requested outcome is explicitly being made persistent through fleet-managed dotfiles. Examples that do not trigger this skill by themselves include diagnosing GPU or hardware behavior, updating a desktop app or package, inspecting a local service, and changing an unmanaged local setting. A machine name identifies the target; it does not by itself make the task fleet work.
 
 ## Safety rules
 
