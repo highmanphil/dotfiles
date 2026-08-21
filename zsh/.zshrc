@@ -24,6 +24,13 @@ plugins=(
 export ZSH="${ZSH:-$HOME/.oh-my-zsh}"
 source "$ZSH/oh-my-zsh.sh"
 
+if (( ${+commands[kubectl]} )); then
+  if (( ! ${+functions[_kubectl]} )); then
+    source <(kubectl completion zsh)
+  fi
+  compdef _kubectl kubectl k
+fi
+
 # direnv's hook applies allowed environments on the first prompt and on every
 # directory change. Avoid a second eager `direnv export` during shell startup.
 if (( ${+commands[direnv]} )); then

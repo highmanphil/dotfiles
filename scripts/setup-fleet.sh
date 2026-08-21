@@ -82,6 +82,10 @@ for name in .zshrc .envs.zsh .p10k.zsh .aliases.zsh .p10k-mac-ssh.zsh; do
   link_managed "$dotfiles_dir/zsh/$name" "$HOME/$name"
 done
 
+for name in kubectl-secret kubectl_complete-secret; do
+  link_managed "$dotfiles_dir/bin/.local/bin/$name" "$HOME/.local/bin/$name"
+done
+
 case "$(uname -s):$(hostname -s 2>/dev/null || hostname)" in
   Darwin:*)
     link_managed "$dotfiles_dir/cmux/.config/cmux/cmux.json" "$HOME/.config/cmux/cmux.json"

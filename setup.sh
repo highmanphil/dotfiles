@@ -14,6 +14,7 @@ fi
 brew bundle --file=~/dotfiles/Brewfile
 
 stow zsh
+stow bin
 stow nvim
 stow tmux
 stow ghostty

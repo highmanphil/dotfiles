@@ -80,6 +80,8 @@ brew "tree-sitter-cli"
 brew "uv"
 # Executes a program periodically, showing output fullscreen
 brew "watch"
+# Portable command-line YAML processor used by kubectl-secret
+brew "yq"
 # Image format providing lossless and lossy compression for web images
 brew "webp"
 # Internet file retriever
