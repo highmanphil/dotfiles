@@ -15,4 +15,3 @@ to-tickets
 unslop
 wayfinder
 wful
-writing-for-agents
