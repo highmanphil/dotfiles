@@ -14,6 +14,12 @@
 - Do not create `.bak`, `.backup`, timestamped backup copies, `codex-backup` files, or similar duplicate safety files.
 - Use version control, an explicit diff, or the operating system Trash for recoverability. If a tool or workflow truly requires a backup file, ask before creating it.
 
+## Responses and artifacts
+
+- Default to delivering ordinary written results directly in the response as polished Markdown. Do not create a workspace file merely to hold an answer unless the user asks for a file or a durable artifact is clearly the natural result of the work.
+- Match progress updates and final explanations to the user's audience. Lead with outcomes and decisions; omit raw tool-call narration, internal reasoning traces, and developer-centric implementation detail unless it helps the user evaluate or use the result.
+- Do not announce that you are applying a writing style, communication guideline, or similar meta-instruction. When a skill or workflow requires an announcement, state the concrete action or constraint it introduces.
+
 ## Repository freshness
 
 - Before answering a question whose correctness depends on repository contents, or before modifying a repository, establish the Git root, current branch or detached HEAD, worktree status, configured remotes, and upstream branch.
