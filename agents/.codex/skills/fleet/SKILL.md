@@ -17,7 +17,7 @@ Do not use it for a task confined to the current machine unless the requested ou
 
 - Never read, print, copy, or commit private key material. Use only the documented private-key paths as SSH client arguments and distribute only `.pub` files.
 - Never create `.bak`, `.backup`, timestamped backup copies, or `codex-backup` files. Use Git, an explicit diff, or Trash for recovery.
-- Inspect `git status --short --branch` before pulling or deploying dotfiles. Stop on a dirty target instead of overwriting its changes.
+- Inspect `git status --short --branch` before pulling or deploying dotfiles. Do not deploy over a dirty target. Preserve unrelated controller edits; a safe temporary stash and verified restoration may be used when synchronization requires a clean controller.
 - Treat the Mac and Home PC as controllers. Do not make the VPS a controller unless Phil explicitly asks and approves the required key distribution.
 - Use Tailscale addresses for Mac/Home traffic. The VPS currently uses its public address.
 - Re-check the exact host and user immediately before a privileged or destructive command.
@@ -58,14 +58,14 @@ After installing or editing a skill by another method, run either equivalent com
 ~/dotfiles/scripts/fleet-skills.sh capture-and-sync
 ```
 
-Never copy internal skill contents into the public dotfiles repository. In particular, keep `a1-jira-confluence` and `company-brain` only in the direct SSH-synchronized store.
+Never copy internal skill contents into the public dotfiles repository. In particular, keep `a1-jira-confluence` and `company-brain` in the private fleet-skills repository, not public dotfiles.
 
 Do not synchronize these as ordinary personal skills:
 
 - `.system` and product-managed runtime/plugin skills.
 - Broken or temporary symlinks.
 
-The uniform selected personal set is: `a1-jira-confluence`, `company-brain`, `diagnose`, `grill-me`, `grill-with-docs`, `grilling`, `handoff`, `hatch-pet`, `prototype`, `research`, `to-spec`, `to-tickets`, `wayfinder`, and `wful`. `$fleet` remains managed directly by dotfiles. Product-managed `.system`, plugin-cache, and `codex-*` runtime skills are outside this personal manifest and may vary by platform.
+The current selected set is defined by `~/.local/share/fleet-skills/skills-manifest.txt`; `~/dotfiles/agents/skills-manifest.txt` mirrors it. Read the manifests rather than relying on a copied skill list. `$fleet` remains managed directly by dotfiles. Product-managed `.system`, plugin-cache, and `codex-*` runtime skills are outside this personal manifest.
 
 ## Platform scope
 
