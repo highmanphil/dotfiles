@@ -106,3 +106,6 @@ typeset -U path PATH
 if (( ${+commands[wful]} )); then
   eval "$(wful completions zsh)"
 fi
+
+# Vite+ bin (https://viteplus.dev)
+. "$HOME/.config/vite-plus/env"
