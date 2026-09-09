@@ -1,0 +1,2 @@
+# Fleet-wide Codex features. setup-fleet.sh preserves other local config.toml settings.
+context_management

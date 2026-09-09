@@ -64,8 +64,10 @@ from the `agents` package. From either the Mac or Home PC:
 
 Run `~/dotfiles/scripts/setup-fleet.sh` after pulling changes. It links global
 AGENTS.md, the fleet skill, shared zsh/P10k files, Mac cmux settings, and Home
-PC limux settings. It never creates backup copies; an unmanaged conflicting
-file is refused unless `--replace-managed` is explicitly supplied.
+PC limux settings. It also enables the Codex features listed in
+`agents/.codex/features.txt` while preserving each host's other Codex settings.
+It never creates backup copies; an unmanaged conflicting file is refused unless
+`--replace-managed` is explicitly supplied.
 
 Personal skill contents and their runtime manifest are kept out of this public
 repository in the private `highmanphil/fleet-skills` repository, checked out at

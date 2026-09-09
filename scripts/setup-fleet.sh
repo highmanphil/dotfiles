@@ -30,6 +30,19 @@ link_managed() {
 link_managed "$dotfiles_dir/agents/.codex/AGENTS.md" "$HOME/.codex/AGENTS.md"
 link_managed "$dotfiles_dir/agents/.codex/skills/fleet" "$HOME/.codex/skills/fleet"
 
+codex_feature_manifest="$dotfiles_dir/agents/.codex/features.txt"
+if command -v codex >/dev/null 2>&1 && [[ -f "$codex_feature_manifest" ]]; then
+  codex_features="$(codex features list 2>/dev/null || true)"
+  while IFS= read -r feature_name; do
+    [[ -n "$feature_name" && "$feature_name" != \#* ]] || continue
+    if grep -Eq "^${feature_name}[[:space:]]" <<<"$codex_features"; then
+      codex features enable "$feature_name" >/dev/null 2>&1
+    else
+      printf 'Codex feature is unavailable in the installed version: %s\n' "$feature_name" >&2
+    fi
+  done < "$codex_feature_manifest"
+fi
+
 skill_store="$HOME/.local/share/fleet-skills"
 skill_manifest="$skill_store/skills-manifest.txt"
 [[ -f "$skill_manifest" ]] || skill_manifest="$dotfiles_dir/agents/skills-manifest.txt"
