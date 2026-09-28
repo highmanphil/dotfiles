@@ -86,6 +86,7 @@ while IFS= read -r skill_name; do
   [[ -n "$skill_name" && "$skill_name" != \#* ]] || continue
   if [[ -f "$skill_store/$skill_name/SKILL.md" ]]; then
     link_shared_skill "$skill_store/$skill_name" "$HOME/.agents/skills/$skill_name"
+    link_shared_skill "$skill_store/$skill_name" "$HOME/.codex/skills/$skill_name"
   else
     printf 'Shared skill content is not present on this machine: %s\n' "$skill_name" >&2
   fi
