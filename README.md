@@ -66,6 +66,9 @@ Run `~/dotfiles/scripts/setup-fleet.sh` after pulling changes. It links global
 AGENTS.md, the fleet skill, shared zsh/P10k files, Mac cmux settings, and Home
 PC limux settings. It also enables the Codex features listed in
 `agents/.codex/features.txt` while preserving each host's other Codex settings.
+It also links the global Claude `CLAUDE.md`, merges `agents/.claude/settings.json`
+into each host's `~/.claude/settings.json` (this needs `jq`), and links shared
+skills into `~/.claude/skills/` without replacing skills already installed there.
 It never creates backup copies; an unmanaged conflicting file is refused unless
 `--replace-managed` is explicitly supplied.
 

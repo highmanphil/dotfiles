@@ -43,10 +43,29 @@ if command -v codex >/dev/null 2>&1 && [[ -f "$codex_feature_manifest" ]]; then
   done < "$codex_feature_manifest"
 fi
 
+link_managed "$dotfiles_dir/agents/.claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+
+# Merge shared keys into each host's Claude settings without replacing local keys.
+claude_settings_fragment="$dotfiles_dir/agents/.claude/settings.json"
+claude_settings="$HOME/.claude/settings.json"
+if ! command -v jq >/dev/null 2>&1; then
+  printf 'jq is required to apply shared Claude settings: %s\n' "$claude_settings_fragment" >&2
+else
+  [[ -f "$claude_settings" ]] || printf '{}\n' > "$claude_settings"
+  if merged_claude_settings="$(jq -s '.[0] * .[1]' "$claude_settings" "$claude_settings_fragment")"; then
+    if [[ "$merged_claude_settings" != "$(jq . "$claude_settings")" ]]; then
+      printf '%s\n' "$merged_claude_settings" > "$claude_settings"
+    fi
+  else
+    printf 'Could not merge shared Claude settings into %s\n' "$claude_settings" >&2
+  fi
+fi
+
 skill_store="$HOME/.local/share/fleet-skills"
 skill_manifest="$skill_store/skills-manifest.txt"
 [[ -f "$skill_manifest" ]] || skill_manifest="$dotfiles_dir/agents/skills-manifest.txt"
-mkdir -p "$HOME/.agents/skills" "$HOME/.codex/skills" "$skill_store"
+claude_skills="$HOME/.claude/skills"
+mkdir -p "$HOME/.agents/skills" "$HOME/.codex/skills" "$claude_skills" "$skill_store"
 
 skill_selected() {
   grep -Fqx "$1" "$skill_manifest"
@@ -71,6 +90,13 @@ prune_personal_skills() {
 prune_personal_skills "$HOME/.agents/skills" agents
 prune_personal_skills "$HOME/.codex/skills" codex
 
+# Claude also keeps product-managed and locally installed skills here, so only
+# fleet links are pruned and existing entries are never replaced.
+for entry in "$claude_skills"/*; do
+  [[ -L "$entry" && "$(readlink "$entry")" == "$skill_store/"* ]] || continue
+  skill_selected "$(basename "$entry")" || rm "$entry"
+done
+
 link_shared_skill() {
   local source="$1" destination="$2"
   if [[ -L "$destination" && "$(readlink "$destination")" == "$source" ]]; then
@@ -82,11 +108,18 @@ link_shared_skill() {
   ln -s "$source" "$destination"
 }
 
+link_claude_skill() {
+  local source="$1" destination="$2"
+  [[ -e "$destination" || -L "$destination" ]] && return
+  ln -s "$source" "$destination"
+}
+
 while IFS= read -r skill_name; do
   [[ -n "$skill_name" && "$skill_name" != \#* ]] || continue
   if [[ -f "$skill_store/$skill_name/SKILL.md" ]]; then
     link_shared_skill "$skill_store/$skill_name" "$HOME/.agents/skills/$skill_name"
     link_shared_skill "$skill_store/$skill_name" "$HOME/.codex/skills/$skill_name"
+    link_claude_skill "$skill_store/$skill_name" "$claude_skills/$skill_name"
   else
     printf 'Shared skill content is not present on this machine: %s\n' "$skill_name" >&2
   fi
