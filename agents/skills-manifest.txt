@@ -4,6 +4,7 @@ company-brain
 cua-driver
 diagnose
 domain-modeling
+frontend-design
 grill-me
 grill-with-docs
 grilling
