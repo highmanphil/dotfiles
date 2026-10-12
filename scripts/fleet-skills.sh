@@ -60,6 +60,10 @@ managed_skill_name() {
   esac
 }
 
+skill_adopted() {
+  grep -Fqx "$1" "$skill_store/skills-manifest.txt" 2>/dev/null
+}
+
 capture_installed() {
   local root source name resolved destination
   mkdir -p "$skill_store"
@@ -74,6 +78,7 @@ capture_installed() {
         continue
       }
       [[ -f "$source/SKILL.md" ]] || continue
+      skill_adopted "$name" || continue
       resolved="$(cd "$source" && pwd -P)"
       destination="$skill_store/$name"
       [[ "$resolved" == "$destination" ]] && continue
@@ -83,19 +88,8 @@ capture_installed() {
   done
 }
 
-refresh_manifest() {
-  local temporary store_manifest
-  temporary="$(mktemp)"
-  store_manifest="$skill_store/skills-manifest.txt"
-  find "$skill_store" -mindepth 1 -maxdepth 1 -type d ! -name .git -exec basename {} \; | LC_ALL=C sort -u > "$temporary"
-  if ! cmp -s "$temporary" "$store_manifest"; then
-    cp "$temporary" "$store_manifest"
-  fi
-  if ! cmp -s "$temporary" "$manifest"; then
-    mv "$temporary" "$manifest"
-  else
-    find "$temporary" -delete
-  fi
+mirror_manifest() {
+  cmp -s "$skill_store/skills-manifest.txt" "$manifest" || cp "$skill_store/skills-manifest.txt" "$manifest"
 }
 
 configure_skill_repo() {
@@ -142,12 +136,50 @@ commit_manifest_if_changed() {
   fi
 }
 
+valid_skill_name() {
+  [[ "$1" =~ ^[a-z0-9][a-z0-9_-]*$ ]] || {
+    printf 'Invalid skill name: %s\n' "$1" >&2
+    exit 2
+  }
+}
+
+adopt_skills() {
+  local name
+  require_controller
+  require_clean_current_repo
+  configure_skill_repo
+  for name in "$@"; do
+    valid_skill_name "$name"
+    [[ -f "$skill_store/$name/SKILL.md" || -f "$HOME/.agents/skills/$name/SKILL.md" || -f "$HOME/.codex/skills/$name/SKILL.md" ]] || {
+      printf 'No SKILL.md found for %s in the store, ~/.agents/skills, or ~/.codex/skills.\n' "$name" >&2
+      exit 2
+    }
+    { cat "$skill_store/skills-manifest.txt"; printf '%s\n' "$name"; } | LC_ALL=C sort -u > "$skill_store/skills-manifest.txt.new"
+    mv "$skill_store/skills-manifest.txt.new" "$skill_store/skills-manifest.txt"
+  done
+  capture_and_publish
+}
+
+remove_skills() {
+  local name
+  require_controller
+  require_clean_current_repo
+  configure_skill_repo
+  for name in "$@"; do
+    valid_skill_name "$name"
+    grep -Fvx "$name" "$skill_store/skills-manifest.txt" > "$skill_store/skills-manifest.txt.new" || true
+    mv "$skill_store/skills-manifest.txt.new" "$skill_store/skills-manifest.txt"
+    find "${skill_store:?}/$name" -depth -delete 2>/dev/null || true
+  done
+  capture_and_publish
+}
+
 capture_and_publish() {
   require_controller
   require_clean_current_repo
   configure_skill_repo
   capture_installed
-  refresh_manifest
+  mirror_manifest
   commit_and_push_store
   commit_manifest_if_changed
   "$dotfiles_dir/scripts/setup-fleet.sh"
@@ -162,7 +194,19 @@ case "${1:-}" in
     require_controller
     require_clean_current_repo
     npx --yes skills "$@"
+    printf 'Installed skills stay local and are pruned at the next convergence unless adopted:\n' >&2
+    printf '  fleet-skills.sh adopt <name>\n' >&2
     capture_and_publish
+    ;;
+  adopt)
+    shift
+    [[ $# -gt 0 ]] || { printf 'Usage: fleet-skills.sh adopt <name>...\n' >&2; exit 2; }
+    adopt_skills "$@"
+    ;;
+  remove)
+    shift
+    [[ $# -gt 0 ]] || { printf 'Usage: fleet-skills.sh remove <name>...\n' >&2; exit 2; }
+    remove_skills "$@"
     ;;
   capture-and-sync)
     capture_and_publish
@@ -172,6 +216,8 @@ case "${1:-}" in
     ;;
   *)
     printf 'Usage: fleet-skills.sh install <skills-cli arguments...>\n' >&2
+    printf '       fleet-skills.sh adopt <name>...\n' >&2
+    printf '       fleet-skills.sh remove <name>...\n' >&2
     printf '       fleet-skills.sh capture-and-sync\n' >&2
     printf '       fleet-skills.sh capture-and-publish\n' >&2
     exit 2

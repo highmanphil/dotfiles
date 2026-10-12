@@ -74,13 +74,19 @@ It never creates backup copies; an unmanaged conflicting file is refused unless
 
 Personal skill contents and their runtime manifest are kept out of this public
 repository in the private `highmanphil/fleet-skills` repository, checked out at
-`~/.local/share/fleet-skills/`. The non-sensitive manifest is mirrored at
-`agents/skills-manifest.txt`. Every machine pulls and applies desired state at
-boot or login and every 15 minutes, so machines that were offline converge
-after they return. In interactive zsh, the `skills` command wraps the official
-Skills CLI and publishes successful installs. After an installation performed
-by another tool, run:
+`~/.local/share/fleet-skills/`. Its `skills-manifest.txt` is the allowlist: only
+listed skills are linked into Claude, Codex, and `~/.agents`, and every other
+personal skill is pruned. Built-in and plugin skills are never managed here. The
+non-sensitive manifest is mirrored at `agents/skills-manifest.txt`. Every machine
+pulls and applies desired state at boot or login and every 15 minutes, so
+machines that were offline converge after they return. Change the set from the
+Mac or Home PC:
 
 ```sh
+~/dotfiles/scripts/fleet-skills.sh adopt <name>    # add a skill installed locally
+~/dotfiles/scripts/fleet-skills.sh remove <name>   # drop it from the fleet
 ~/dotfiles/scripts/fleet-skills.sh capture-and-publish
 ```
+
+In interactive zsh, the `skills` command wraps the official Skills CLI; installed
+skills stay local until adopted.
