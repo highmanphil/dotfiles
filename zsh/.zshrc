@@ -99,13 +99,9 @@ path=("$PNPM_HOME" $path)
 # pnpm end
 
 # opencode
-path=("$HOME/.wonderful/bin" "$HOME/.opencode/bin" "${KREW_ROOT:-$HOME/.krew}/bin" $path)
+path=("$HOME/.opencode/bin" "${KREW_ROOT:-$HOME/.krew}/bin" $path)
 [[ -r "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
 typeset -U path PATH
-
-if (( ${+commands[wful]} )); then
-  eval "$(wful completions zsh)"
-fi
 
 # Vite+ bin (https://viteplus.dev)
 . "$HOME/.config/vite-plus/env"

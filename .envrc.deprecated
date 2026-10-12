@@ -1,3 +1,5 @@
+# DEPRECATED 2026-10-12: GitHub account auto-switching is no longer used; everything runs as highmanphil.
+# direnv ignores this file. Rename back to .envrc (and run 'direnv allow') to re-enable.
 # ~/.envrc in ~/workspace
 username="highmanphil"
 current=$(gh auth status -h github.com 2>/dev/null | grep "Logged in to github.com as" | awk '{print $7}')
