@@ -1,0 +1,3 @@
+# Per-host skill exclusions: "<mac|home|vps> <skill>". Applied on top of
+# skills-manifest.txt for every agent on that host.
+mac cua-driver

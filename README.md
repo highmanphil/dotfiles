@@ -88,5 +88,9 @@ Mac or Home PC:
 ~/dotfiles/scripts/fleet-skills.sh capture-and-publish
 ```
 
+To keep a skill off one machine, add a `<mac|home|vps> <skill>` line to
+`agents/skills-excludes.txt` and push; that host prunes it from every agent at
+the next convergence.
+
 In interactive zsh, the `skills` command wraps the official Skills CLI; installed
 skills stay local until adopted.

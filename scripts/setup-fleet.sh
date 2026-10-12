@@ -65,10 +65,28 @@ skill_store="$HOME/.local/share/fleet-skills"
 skill_manifest="$skill_store/skills-manifest.txt"
 [[ -f "$skill_manifest" ]] || skill_manifest="$dotfiles_dir/agents/skills-manifest.txt"
 claude_skills="$HOME/.claude/skills"
+
+host_role() {
+  case "$(uname -s):$(hostname -s 2>/dev/null || hostname)" in
+    Darwin:*) printf 'mac\n' ;;
+    Linux:phil-cachyos) printf 'home\n' ;;
+    Linux:ubuntu) printf 'vps\n' ;;
+    *) printf 'unknown\n' ;;
+  esac
+}
+
+# Skills for this host: the manifest minus its lines in agents/skills-excludes.txt
+# ("<mac|home|vps> <skill>").
+skill_excludes="$dotfiles_dir/agents/skills-excludes.txt"
+[[ -f "$skill_excludes" ]] || skill_excludes=/dev/null
+skill_list="$(awk -v role="$(host_role)" '
+  FILENAME == ARGV[1] { if ($1 == role && $1 !~ /^#/) excluded[$2] = 1; next }
+  NF && !($1 in excluded)' "$skill_excludes" "$skill_manifest")"
+
 mkdir -p "$HOME/.agents/skills" "$HOME/.codex/skills" "$claude_skills" "$skill_store"
 
 skill_selected() {
-  grep -Fqx "$1" "$skill_manifest"
+  grep -Fqx "$1" <<<"$skill_list"
 }
 
 prune_personal_skills() {
@@ -123,7 +141,7 @@ while IFS= read -r skill_name; do
   else
     printf 'Shared skill content is not present on this machine: %s\n' "$skill_name" >&2
   fi
-done < "$skill_manifest"
+done <<<"$skill_list"
 
 for name in .zshrc .envs.zsh .p10k.zsh .aliases.zsh .p10k-mac-ssh.zsh; do
   link_managed "$dotfiles_dir/zsh/$name" "$HOME/$name"
