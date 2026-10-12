@@ -3,4 +3,5 @@ cua-driver
 frontend-design
 html-plan
 pr-writing
+publish-files
 share-files
