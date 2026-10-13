@@ -5,3 +5,4 @@ html-plan
 pr-writing
 publish-files
 share-files
+vault-logins
