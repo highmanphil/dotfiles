@@ -5,4 +5,5 @@ html-plan
 pr-writing
 publish-files
 share-files
+sol-reviewer
 vault-logins
