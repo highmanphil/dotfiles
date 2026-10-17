@@ -120,8 +120,8 @@
 
 ## Delegation
 
-- Build with Claude subagents and review with GPT-6.1-Sol (high effort) via
-  T3 `delegate_task`, one new task per review round.
+- Build with Claude subagents. Outside code reviews follow the `sol-reviewer`
+  skill: only when Phil asks or the work is serious.
 - When Phil asks for as much parallel work as possible, start as many
   subagents as the work splits into.
 - In worktree-isolated subagents, run git as plain single commands: no `&&`
