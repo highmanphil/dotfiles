@@ -1,3 +1,4 @@
+asc
 babysit
 cua-driver
 frontend-design
@@ -6,4 +7,6 @@ pr-writing
 publish-files
 share-files
 sol-reviewer
+test-devices
+ui-rules
 vault-logins
