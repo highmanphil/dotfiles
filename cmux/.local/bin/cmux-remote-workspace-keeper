@@ -4,6 +4,7 @@
 # inserts a local shell even when the workspace belongs to an SSH remote.
 # Watch close events and replace only that final local placeholder with a
 # terminal created through the workspace's still-live remote transport.
+# cmux-tui owns its remote tab lifecycle and must never use this legacy repair.
 
 setopt pipefail
 
@@ -23,7 +24,7 @@ export CMUX_QUIET=1
 
 handle_surface_close() {
   local event_json="$1"
-  local workspace_id destination workspace_json sessions placeholder
+  local workspace_id destination workspace_json sessions placeholder surface_tree
 
   [[ "$(print -r -- "$event_json" | "$jq_cli" -r '.type // empty')" == event ]] || return 0
 
@@ -37,6 +38,13 @@ handle_surface_close() {
   destination="$(print -r -- "$workspace_json" | "$jq_cli" -r --arg id "$workspace_id" \
     '.workspaces[] | select(.id == $id) | .remote.destination // empty')"
 
+  # New cmux releases project durable cmux-tui tabs into the workspace.
+  # Their ssh-session-list output no longer tracks legacy attachments, so the
+  # old emptiness check would open another tab after every close event.
+  print -r -- "$workspace_json" | "$jq_cli" -e --arg id "$workspace_id" \
+    '.workspaces[] | select(.id == $id) | .pinned == true and .remote.backend != "cmux-tui"' \
+    >/dev/null 2>&1 || return 0
+
   case "$destination" in
     phil@100.104.47.26|root@217.160.186.7) ;;
     *) return 0 ;;
@@ -46,6 +54,13 @@ handle_surface_close() {
   if print -r -- "$sessions" | /usr/bin/grep -Eq 'attachments=[1-9][0-9]*'; then
     return 0
   fi
+
+  # Repair only the final placeholder, never a focused tab in a workspace
+  # that still contains other tabs or panes. Fail closed on unknown output.
+  surface_tree="$("$cmux_cli" tree --workspace "$workspace_id" --json 2>/dev/null)" || return 0
+  print -r -- "$surface_tree" | "$jq_cli" -e --arg id "$workspace_id" \
+    '[.windows[].workspaces[] | select(.id == $id) | .panes[].surfaces[]] | length == 1' \
+    >/dev/null 2>&1 || return 0
 
   placeholder="$("$cmux_cli" identify --workspace "$workspace_id" --json 2>/dev/null \
     | "$jq_cli" -r '.focused.surface_ref // empty')"
