@@ -6,7 +6,7 @@
   <string>com.phil.cmux-remote-workspace-keeper</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/zsh</string>
+    <string>/usr/bin/python3</string>
     <string>/Users/phil/.local/bin/cmux-remote-workspace-keeper</string>
   </array>
   <key>RunAtLoad</key>

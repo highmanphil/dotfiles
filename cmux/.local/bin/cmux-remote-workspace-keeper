@@ -1,84 +1,142 @@
-#!/bin/zsh
+#!/usr/bin/python3
+"""Keep the pinned Home/VPS workspace's final terminal on its SSH machine."""
+import json
+import os
+import subprocess
+import time
 
-# cmux keeps a pinned workspace after its final tab closes, but currently
-# inserts a local shell even when the workspace belongs to an SSH remote.
-# Watch close events and replace only that final local placeholder with a
-# terminal created through the workspace's still-live remote transport.
-# cmux-tui owns its remote tab lifecycle and must never use this legacy repair.
+CMUX = '/Applications/cmux.app/Contents/Resources/bin/cmux'
+DESTINATIONS = {'phil@100.104.47.26', 'root@217.160.186.7'}
 
-setopt pipefail
 
-cmux_cli=/Applications/cmux.app/Contents/Resources/bin/cmux
-jq_cli=/opt/homebrew/bin/jq
+def cli(*args, structured=True):
+    command = [CMUX, '--id-format', 'both']
+    if structured:
+        command.append('--json')
+    result = subprocess.run(command + list(args), capture_output=True, text=True,
+                            timeout=20, check=True)
+    return json.loads(result.stdout) if structured else result.stdout
 
-if [[ ! -x "$jq_cli" ]]; then
-  jq_cli="${commands[jq]:-}"
-fi
 
-if [[ ! -x "$cmux_cli" || -z "$jq_cli" || ! -x "$jq_cli" ]]; then
-  print -u2 -- "cmux workspace keeper: cmux or jq is unavailable"
-  exit 1
-fi
+def surfaces(workspace_id):
+    tree = cli('tree', '--workspace', workspace_id)
+    return [(pane, surface) for window in tree.get('windows', [])
+            for workspace in window.get('workspaces', []) if workspace['id'] == workspace_id
+            for pane in workspace.get('panes', []) for surface in pane.get('surfaces', [])]
 
-export CMUX_QUIET=1
 
-handle_surface_close() {
-  local event_json="$1"
-  local workspace_id destination workspace_json sessions placeholder surface_tree
+def idle_placeholder(surface):
+    if surface.get('type') != 'terminal':
+        return False
+    tty = surface.get('tty')
+    if not tty or not os.path.exists('/dev/' + tty):
+        return True  # A disconnected projection or stale restored local PTY.
+    processes = subprocess.run(['/bin/ps', '-t', tty, '-o', 'comm='],
+                               capture_output=True, text=True, timeout=5, check=True)
+    # Do not close a local terminal containing an editor, SSH, or any user job.
+    return all(os.path.basename(line.strip()).lstrip('-') in
+               {'login', 'zsh', 'bash', 'sh', 'fish', 'gitstatusd-darwin-arm64',
+                'gitstatusd-darwin-x86_64'} for line in processes.stdout.splitlines())
 
-  [[ "$(print -r -- "$event_json" | "$jq_cli" -r '.type // empty')" == event ]] || return 0
 
-  workspace_id="$(print -r -- "$event_json" | "$jq_cli" -r '.workspace_id // empty')"
-  [[ "$workspace_id" =~ '^[0-9A-Fa-f-]{36}$' ]] || return 0
+def candidate(workspace):
+    remote = workspace.get('remote') or {}
+    return (workspace.get('pinned') is True and remote.get('enabled') is True
+            and remote.get('backend') == 'cmux-tui'
+            and remote.get('destination') in DESTINATIONS
+            and remote.get('connected') is True
+            and remote.get('active_terminal_sessions') == 0
+            and remote.get('machine') and remote.get('remote_workspace_id'))
 
-  # Let cmux finish inserting its keep-workspace-open placeholder.
-  sleep 0.2
 
-  workspace_json="$("$cmux_cli" workspace list --json 2>/dev/null)" || return 0
-  destination="$(print -r -- "$workspace_json" | "$jq_cli" -r --arg id "$workspace_id" \
-    '.workspaces[] | select(.id == $id) | .remote.destination // empty')"
+def repair(workspace, pane, placeholder, expected_ids=None):
+    workspace_id = workspace['id']
+    remote = workspace['remote']
+    catalog = cli('surface', 'ls', remote['machine'])
+    running = [r for r in catalog.get('resources', [])
+               if r.get('kind') == 'terminal' and r.get('lifecycle') == 'running']
+    if any(workspace_id in r.get('open_workspace_ids', []) for r in running):
+        return  # An attach is already in flight; never open a second terminal.
+    current = surfaces(workspace_id)
+    expected_ids = expected_ids or {placeholder['id']}
+    if {s['id'] for _, s in current} != expected_ids:
+        return
+    old = next((s for _, s in current if s['id'] == placeholder['id']), None)
+    if old is None or not idle_placeholder(old):
+        return
+    params = dict(workspace_id=workspace_id, pane_id=pane['id'], placement='tab',
+                  focus=bool(workspace.get('selected') and placeholder.get('selected')),
+                  remote_workspace_id=remote['remote_workspace_id'])
+    existing = next((r for r in running if
+                     (r.get('remote_workspace') or {}).get('id') == remote['remote_workspace_id']), None)
+    if existing:
+        params['resource'] = existing['id']
+        created = cli('rpc', 'surface.project', json.dumps(params))
+    else:
+        params['machine'] = remote['machine']
+        created = cli('rpc', 'surface.new_terminal', json.dumps(params))
+    new_id = created.get('surface_id')
+    print('Recovery opened ' + str(new_id) + ' for placeholder ' + placeholder['id'], flush=True)
+    if not new_id or new_id == placeholder['id']:
+        return
+    # Verify the new projection is live before removing the exact old placeholder.
+    catalog = cli('surface', 'ls', remote['machine'])
+    if not any(r.get('kind') == 'terminal' and r.get('lifecycle') == 'running'
+               and new_id in r.get('open_surface_ids', [])
+               for r in catalog.get('resources', [])):
+        print('Recovery verification pending: projection not live yet', flush=True)
+        return
+    current = surfaces(workspace_id)
+    if not {placeholder['id'], new_id}.issubset({s['id'] for _, s in current}):
+        print('Recovery preserved tabs: target disappeared concurrently', flush=True)
+        return
+    old = next(s for _, s in current if s['id'] == placeholder['id'])
+    if not idle_placeholder(old):
+        print('Recovery preserved local placeholder: process is busy', flush=True)
+        return
+    cli('close-surface', '--workspace', workspace_id, '--surface', placeholder['id'], structured=False)
+    print('Restored SSH terminal in ' + workspace.get('title', workspace_id), flush=True)
 
-  # New cmux releases project durable cmux-tui tabs into the workspace.
-  # Their ssh-session-list output no longer tracks legacy attachments, so the
-  # old emptiness check would open another tab after every close event.
-  print -r -- "$workspace_json" | "$jq_cli" -e --arg id "$workspace_id" \
-    '.workspaces[] | select(.id == $id) | .pinned == true and .remote.backend != "cmux-tui"' \
-    >/dev/null 2>&1 || return 0
 
-  case "$destination" in
-    phil@100.104.47.26|root@217.160.186.7) ;;
-    *) return 0 ;;
-  esac
+def main():
+    os.environ['CMUX_QUIET'] = '1'
+    seen = {}
+    attempted = {}
+    while True:
+        try:
+            # A socket query never launches cmux; leave it closed when the user quits.
+            windows = cli('tree', '--all').get('windows', [])
+            present = set()
+            for window in windows:
+                listing = cli('workspace', 'list', '--window', window['id'])
+                for workspace in listing.get('workspaces', []):
+                    if not candidate(workspace):
+                        continue
+                    current = surfaces(workspace['id'])
+                    focused = current if len(current) == 1 else [
+                        pair for pair in current if pair[1].get('focused') and pair[1].get('selected')]
+                    if len(focused) != 1 or not idle_placeholder(focused[0][1]):
+                        continue
+                    pane, placeholder = focused[0]
+                    expected_ids = {s['id'] for _, s in current}
+                    key = (workspace['id'], placeholder['id'], tuple(sorted(expected_ids)))
+                    present.add(key)
+                    now = time.monotonic()
+                    since = seen.setdefault(key, now)
+                    # Allow native reconnect and shell startup to finish first.
+                    if now - since < 4 or now - attempted.get(key, -1000) < 30:
+                        continue
+                    attempted[key] = now
+                    try:
+                        repair(workspace, pane, placeholder, expected_ids)
+                    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+                        print('SSH workspace recovery deferred: ' + str(error), flush=True)
+            seen = {key: value for key, value in seen.items() if key in present}
+            attempted = {key: value for key, value in attempted.items() if key in present}
+        except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+            seen.clear()  # cmux is closed, starting, or its socket is unavailable.
+        time.sleep(2)
 
-  sessions="$("$cmux_cli" ssh-session-list --workspace "$workspace_id" 2>/dev/null)" || return 0
-  if print -r -- "$sessions" | /usr/bin/grep -Eq 'attachments=[1-9][0-9]*'; then
-    return 0
-  fi
 
-  # Repair only the final placeholder, never a focused tab in a workspace
-  # that still contains other tabs or panes. Fail closed on unknown output.
-  surface_tree="$("$cmux_cli" tree --workspace "$workspace_id" --json 2>/dev/null)" || return 0
-  print -r -- "$surface_tree" | "$jq_cli" -e --arg id "$workspace_id" \
-    '[.windows[].workspaces[] | select(.id == $id) | .panes[].surfaces[]] | length == 1' \
-    >/dev/null 2>&1 || return 0
-
-  placeholder="$("$cmux_cli" identify --workspace "$workspace_id" --json 2>/dev/null \
-    | "$jq_cli" -r '.focused.surface_ref // empty')"
-  [[ "$placeholder" == surface:<-> ]] || return 0
-
-  "$cmux_cli" new-surface --workspace "$workspace_id" --focus true >/dev/null 2>&1 || return 0
-  sleep 1
-
-  sessions="$("$cmux_cli" ssh-session-list --workspace "$workspace_id" 2>/dev/null)" || return 0
-  if print -r -- "$sessions" | /usr/bin/grep -Eq 'attachments=[1-9][0-9]*'; then
-    "$cmux_cli" close-surface --workspace "$workspace_id" --surface "$placeholder" >/dev/null 2>&1 || true
-  fi
-}
-
-while true; do
-  "$cmux_cli" events --name surface.closed --reconnect --no-heartbeat 2>/dev/null \
-    | while IFS= read -r event_json; do
-        handle_surface_close "$event_json"
-      done
-  sleep 2
-done
+if __name__ == '__main__':
+    main()

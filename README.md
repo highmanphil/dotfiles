@@ -45,12 +45,16 @@ On the Mac, include `ssh/cmux-remotes.conf` from `~/.ssh/config`. The remote
 sshd must accept the cosmetic marker with `AcceptEnv P10K_MAC_SSH`. cmux-managed
 SSH workspaces also provide a fallback marker for Home PC sessions.
 
-The `cmux` stow package keeps pinned SSH workspaces alive when their final tab
-is closed. cmux itself inserts a local shell in that case, so the
-`com.phil.cmux-remote-workspace-keeper` LaunchAgent watches `surface.closed`
-events and replaces only that final placeholder with a terminal using the
-workspace's existing SSH transport. It is limited to the configured Home and
-VPS destinations and requires cmux's local `automation` socket mode.
+The `cmux` stow package keeps the pinned Home and VPS SSH workspaces usable
+when their final tab is closed or cmux restarts. The
+`com.phil.cmux-remote-workspace-keeper` LaunchAgent checks for an idle local
+or disconnected placeholder after the remote transport is ready. It uses the
+cmux-tui resource API to restore one remote terminal in the same pane, verifies
+that projection is live, and only then removes the exact placeholder. It leaves
+working remote tabs, other tabs and panes, busy local shells, and offline
+hosts alone. Checks also run at startup; failed attempts are throttled. This requires
+cmux's local `automation` socket mode and the macOS system Python 3.
+Run `python3 scripts/test-cmux-workspace-keeper.py` for the regression checks.
 
 ## Fleet management
 
