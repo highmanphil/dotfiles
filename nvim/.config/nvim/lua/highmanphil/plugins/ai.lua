@@ -19,7 +19,7 @@ end
 local nes_endpoint, nes_model, fim_endpoint, fim_model
 if listening(8013) then
 	nes_endpoint = "http://127.0.0.1:8013/v1/completions"
-	nes_model = vim.env.NES_MODEL or "sweep-next-edit-v2-7b-q4"
+	nes_model = vim.env.NES_MODEL or "sweep-next-edit-v2-7b"
 else
 	nes_endpoint = "http://" .. home_pc .. ":10101/v1/completions"
 	nes_model = "sweep-next-edit-v2-7b"
