@@ -161,6 +161,7 @@ case "$(uname -s):$(hostname -s 2>/dev/null || hostname)" in
     fi
     ;;
   Linux:phil-cachyos)
+    link_managed "$dotfiles_dir/bin/bin/t3code" "$HOME/bin/t3code"
     link_managed "$dotfiles_dir/limux/.config/limux/settings.json" "$HOME/.config/limux/settings.json"
     link_managed "$dotfiles_dir/fleet/systemd/fleet-converge.service" "$HOME/.config/systemd/user/fleet-converge.service"
     link_managed "$dotfiles_dir/fleet/systemd/fleet-converge.timer" "$HOME/.config/systemd/user/fleet-converge.timer"

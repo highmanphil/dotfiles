@@ -1,0 +1,3 @@
+#!/bin/sh
+# Keep the shell launcher on the package-managed nightly desktop build.
+exec /usr/bin/t3code-nightly "$@"
