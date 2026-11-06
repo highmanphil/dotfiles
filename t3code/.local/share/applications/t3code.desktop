@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=T3 Code (Nightly)
+Comment=Desktop client for the local and remote T3 Code servers
+Exec=/home/phil/bin/t3code %U
+TryExec=/home/phil/bin/t3code
+Icon=t3code-nightly
+Terminal=false
+StartupNotify=false
+StartupWMClass=t3code
+Categories=Development;
+MimeType=x-scheme-handler/t3code;
