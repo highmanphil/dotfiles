@@ -1,3 +1,7 @@
+# Agent shells (Claude Code): pass unmatched globs through like bash, so an
+# unquoted `grep --include=*.ts` doesn't abort the whole command.
+[[ -z ${CLAUDECODE-} ]] || setopt NO_NOMATCH
+
 # Codex snapshots source .zshrc non-interactively. Export the portable
 # environment without loading the interactive prompt and plugin stack.
 if [[ ! -o interactive ]]; then
