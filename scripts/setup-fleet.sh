@@ -44,6 +44,10 @@ if command -v codex >/dev/null 2>&1 && [[ -f "$codex_feature_manifest" ]]; then
 fi
 
 link_managed "$dotfiles_dir/agents/.claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+for claude_agent in "$dotfiles_dir"/agents/.claude/agents/*.md; do
+  [[ -e "$claude_agent" ]] || continue
+  link_managed "$claude_agent" "$HOME/.claude/agents/$(basename "$claude_agent")"
+done
 
 # Merge shared keys into each host's Claude settings without replacing local keys.
 claude_settings_fragment="$dotfiles_dir/agents/.claude/settings.json"

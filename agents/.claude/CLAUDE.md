@@ -68,3 +68,31 @@
   maximum parallelism, start as many as the work splits into.
 - In worktree-isolated subagents, run git as plain single commands. The
   harness refuses `&&` chains, subshells, and heredocs around git there.
+
+## Subagent models
+
+Pick the subagent's model from the job, without asking. The agents in
+`~/.claude/agents/` pin these; for other types, pass `model` (and `effort`
+only where these rules name it) on the Agent call.
+
+- Haiku: finding files, searching code, reading logs, running tests or builds
+  and reporting failures, summarizing, classifying or extracting at volume.
+  Use `Explore` and `runner`. Mistakes here are cheap to spot.
+- Sonnet, medium effort: well-scoped edits against a clear spec, mechanical
+  changes, repeated investigation, review or drafting passes, and parallel
+  workers under a lead. Use `coder`.
+- Inherit (Opus): code changes that need judgment, debugging with an unknown
+  cause, computer use or screenshot-heavy loops, and anything unclear.
+- Fable: major refactors, migrations, architecture plans, or deep and
+  quantitative analysis, and before raising Opus past `high` on a hard
+  problem. Use `architect` (pinned to `claude-fable-5-2`; the `fable` alias
+  still meant 5.1 in Claude Code 2.1.319), starting at medium effort.
+- If a subagent's result falls short, add a check first (a test, a build, a
+  script), then raise effort one level, then move up one model at a lower
+  effort. When outcomes are checkable, run a batch cheap and re-run only the
+  failures higher.
+- Keep code edits and design decisions in the main session; give cheap
+  subagents the verbose reading. Skip subagents for one chain of dependent
+  steps or work that fits in the main context.
+- Reviews keep their own rules: `sol-reviewer` and `babysit` pick their
+  models.
